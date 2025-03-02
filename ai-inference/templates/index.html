@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SQL Learning Path AI Assistant</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <!-- Add Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <h1><i class="fas fa-database"></i> SQL Learning Path AI Assistant</h1>
+        <p>
+          Ask any question about SQL and get answers based on the SQL Learning
+          Path repository
+        </p>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+          <div class="message system">
+            <div class="message-content">
+              <p>
+                Hello! I'm your SQL Learning Assistant. Ask me anything about
+                SQL concepts, syntax, or best practices from the SQL Learning
+                Path repository.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input">
+          <form id="query-form">
+            <input
+              type="text"
+              id="query-input"
+              placeholder="Ask a question about SQL..."
+              autocomplete="off"
+            />
+            <button type="submit">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="sources-container" id="sources-container">
+        <h3>Sources</h3>
+        <div class="sources-list" id="sources-list">
+          <p class="no-sources">
+            Sources will appear here when you ask a question.
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="container">
+        <p>
+          Powered by LangChain and OpenAI |
+          <a href="/">Back to Documentation</a>
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const queryForm = document.getElementById("query-form");
+        const queryInput = document.getElementById("query-input");
+        const chatMessages = document.getElementById("chat-messages");
+        const sourcesList = document.getElementById("sources-list");
+
+        queryForm.addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const query = queryInput.value.trim();
+          if (!query) return;
+
+          // Add user message to chat
+          addMessage("user", query);
+
+          // Clear input
+          queryInput.value = "";
+
+          // Add loading message
+          const loadingMsgId = addMessage(
+            "system",
+            '<i class="fas fa-spinner fa-spin"></i> Thinking...'
+          );
+
+          try {
+            // Send query to API
+            const response = await fetch("/api/query", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ query }),
+            });
+
+            if (!response.ok) {
+              throw new Error(`Error: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            // Remove loading message
+            document.getElementById(loadingMsgId).remove();
+
+            // Add AI response to chat
+            addMessage("system", data.answer);
+
+            // Update sources
+            updateSources(data.sources);
+          } catch (error) {
+            // Remove loading message
+            document.getElementById(loadingMsgId).remove();
+
+            // Add error message
+            addMessage(
+              "system",
+              `<span class="error"><i class="fas fa-exclamation-triangle"></i> ${error.message}</span>`
+            );
+          }
+        });
+
+        function addMessage(type, content) {
+          const messageId = "msg-" + Date.now();
+          const messageDiv = document.createElement("div");
+          messageDiv.className = `message ${type}`;
+          messageDiv.id = messageId;
+
+          const contentDiv = document.createElement("div");
+          contentDiv.className = "message-content";
+          contentDiv.innerHTML = `<p>${content}</p>`;
+
+          messageDiv.appendChild(contentDiv);
+          chatMessages.appendChild(messageDiv);
+
+          // Scroll to bottom
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+
+          return messageId;
+        }
+
+        function updateSources(sources) {
+          sourcesList.innerHTML = "";
+
+          if (!sources || sources.length === 0) {
+            sourcesList.innerHTML =
+              '<p class="no-sources">No sources found for this query.</p>';
+            return;
+          }
+
+          sources.forEach((source) => {
+            const sourceDiv = document.createElement("div");
+            sourceDiv.className = "source-item";
+
+            // Extract filename from path
+            const filename = source.source.split("/").pop();
+
+            sourceDiv.innerHTML = `
+                        <h4>${filename}</h4>
+                        <p>${source.content}</p>
+                    `;
+
+            sourcesList.appendChild(sourceDiv);
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

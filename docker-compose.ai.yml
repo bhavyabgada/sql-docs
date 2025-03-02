@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  ai-inference:
+    build:
+      context: ./ai-inference
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sql-content:/app/sql-content:ro
+      - ai-vectorstore:/app/vectorstore
+    env_file:
+      - ./ai-inference/.env
+    restart: unless-stopped
+    networks:
+      - sql-docs-network
+
+volumes:
+  ai-vectorstore:
+    driver: local
+
+networks:
+  sql-docs-network:
+    driver: bridge 
