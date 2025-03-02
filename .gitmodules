@@ -2,6 +2,3 @@
 	path = docs-site/docs
 	url = https://github.com/bhavyabgada/sql.git
 
-[submodule "sql-content"]
-	path = sql-content
-	url = https://github.com/bhavyabgada/sql.git
